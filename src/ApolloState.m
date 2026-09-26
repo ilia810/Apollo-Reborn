@@ -35,6 +35,10 @@ float sVideoHoldSpeed = 2.0f;        // effective default 2.0× via registerDefa
 
 BOOL sProxyImgurDDG = NO;
 BOOL sImgurAlbumFallbackProxies = YES;
+BOOL sBotSuspicionEnabled = NO;
+BOOL sBotSuspicionPosts = YES;
+BOOL sBotSuspicionComments = YES;
+ApolloBotRules sBotSuspicionRules = {365, 10000, 100, 25, 35, 40, 60};
 BOOL sShowUserAvatars = NO;
 BOOL sUseProfileAvatarTabIcon = NO;
 BOOL sHideTabBarTitles = NO;

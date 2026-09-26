@@ -24,6 +24,9 @@ extern NSString * const ApolloUserProfileUsernameKey;
 @property(nonatomic) NSInteger linkKarma;
 @property(nonatomic) NSInteger commentKarma;
 @property(nonatomic) NSTimeInterval createdUTC;
+// Explicit completeness flag: -1 is also legitimate Reddit comment karma,
+// so consumers must not infer missing statistics from a numeric sentinel.
+@property(nonatomic) BOOL accountStatsKnown;
 // Whether the logged-in account follows this user (about.json's
 // `data.subreddit.user_is_subscriber`). Drives the profile Follow button's
 // Follow/Following state. `followStateKnown` is NO until about.json fills it in.
@@ -55,6 +58,10 @@ extern NSString * const ApolloUserProfileUsernameKey;
 - (void)updateFollowState:(BOOL)following forUsername:(NSString *)username;
 - (void)requestInfoForUsername:(NSString *)username completion:(void (^)(ApolloUserProfileInfo *info))completion;
 - (void)refetchInfoForUsername:(NSString *)username completion:(void (^)(ApolloUserProfileInfo *info))completion;
+// Exactly one main-queue completion. Reuses complete stats for 24 hours and
+// coalesces network work with avatar/profile requests. Unlike refetchInfo this
+// does not evict artwork; unlike requestInfo it never returns stale-then-fresh.
+- (void)requestAccountStatsForUsername:(NSString *)username completion:(void (^)(ApolloUserProfileInfo *info))completion;
 
 // Bulk-prefetch many users' avatars in ONE request (Reddit's user_data_by_account_ids,
 // chunked at 100) keyed by t2_ account fullname, instead of one about.json per user.

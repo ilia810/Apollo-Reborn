@@ -72,6 +72,10 @@ ApolloReborn_FILES = \
     $(SRC_DIR)/ApolloBarkNotifications.m \
     $(SRC_DIR)/ApolloChatUnreadPoller.m \
     $(SRC_DIR)/ApolloUserProfileCache.m \
+    $(SRC_DIR)/ApolloBotScore.c \
+    $(SRC_DIR)/ApolloBotSuspicion.m \
+    $(SRC_DIR)/ApolloBotSuspicionUI.xm \
+    $(SRC_DIR)/settings/ApolloBotSuspicionViewController.m \
     $(SRC_DIR)/ApolloSubredditInfoCache.m \
     $(SRC_DIR)/ApolloSubredditCustomBannerCache.m \
     $(SRC_DIR)/ApolloSubredditCustomIconCache.m \
@@ -244,6 +248,8 @@ ApolloReborn_FILES = \
     $(SRC_DIR)/ApolloPostFilterStore.m \
     $(SRC_DIR)/ApolloPostFilters.xm \
     $(SRC_DIR)/ApolloFiltersBlocksInject.xm \
+    $(SRC_DIR)/ApolloGestureBlockActions.xm \
+    $(SRC_DIR)/settings/ApolloGestureBlockingViewController.m \
     $(SRC_DIR)/ApolloSubredditFilterDetailViewController.m \
     $(SRC_DIR)/PictureInPictureViewController.m \
     $(SRC_DIR)/Defaults.m \

@@ -585,3 +585,40 @@ static NSString *const ApolloInlineMediaLayoutDidChangeNotification = @"ApolloIn
 // audience for the release this ships in. See the gating doc in
 // ApolloWhatsNew.xm.
 static NSString *const UDKeyLastSeenWhatsNewVersion = @"LastSeenWhatsNewVersion";
+
+#pragma mark - Bot Suspicion
+
+// Optional author heuristics, shown on posts/comments. Master defaults OFF;
+// both surfaces default ON once enabled. Numeric defaults: 365 days / 10,000
+// karma / 100 karma per day, weights 25/35/40, label threshold 60 (0–100 points).
+static NSString *const UDKeyBotSuspicionEnabled = @"BotSuspicionEnabled";
+static NSString *const UDKeyBotSuspicionPosts = @"BotSuspicionPosts";
+static NSString *const UDKeyBotSuspicionComments = @"BotSuspicionComments";
+static NSString *const UDKeyBotSuspicionAgeDays = @"BotSuspicionAgeDays";
+static NSString *const UDKeyBotSuspicionKarma = @"BotSuspicionKarma";
+static NSString *const UDKeyBotSuspicionKarmaPerDay = @"BotSuspicionKarmaPerDay";
+static NSString *const UDKeyBotSuspicionAgeWeight = @"BotSuspicionAgeWeight";
+static NSString *const UDKeyBotSuspicionKarmaWeight = @"BotSuspicionKarmaWeight";
+static NSString *const UDKeyBotSuspicionRateWeight = @"BotSuspicionRateWeight";
+static NSString *const UDKeyBotSuspicionThreshold = @"BotSuspicionThreshold";
+
+#pragma mark - Gesture Blocking (ApolloGestureBlockActions)
+
+// Which swipe slot Reborn claims for its block actions, as an
+// ApolloGestureSlot raw value (-1 = off, 0-3 = first/second left/right).
+// Stored as an integer; -1 is also the registered default, so an unconfigured
+// install never intercepts a gesture. The user must ALSO have assigned that
+// slot to some native action in Apollo's own Settings → Gestures — an unassigned
+// slot never fires a pan threshold, so there is nothing for us to claim.
+// Read live at gesture time, so a change applies immediately with no
+// change notification (same reasoning as UDKeySwipeUpForComments).
+static NSString *const UDKeyGestureBlockPostSlot = @"GestureBlockPostSlot";
+static NSString *const UDKeyGestureBlockCommentSlot = @"GestureBlockCommentSlot";
+
+// Post slot only: also block the post's author, not just filter the subreddit.
+// Default YES — "block this whole thing" is the point of the post action.
+static NSString *const UDKeyGestureBlockPostIncludesAuthor = @"GestureBlockPostIncludesAuthor";
+
+// Ask before blocking. Default YES: a block is a remote, hard-to-notice state
+// change, and a mis-swipe that silently filters a subreddit is a bad trade.
+static NSString *const UDKeyGestureBlockConfirm = @"GestureBlockConfirm";

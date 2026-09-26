@@ -6,6 +6,7 @@
 #import "ApolloState.h"
 
 #import <CommonCrypto/CommonDigest.h>
+#include <math.h>
 
 NSString * const ApolloUserProfileInfoUpdatedNotification = @"ApolloUserProfileInfoUpdatedNotification";
 NSString * const ApolloUserProfileUsernameKey = @"username";
@@ -255,6 +256,7 @@ static NSTimeInterval const ApolloUserProfileImageNotFoundTTL = 15.0 * 60.0;
     dict[@"linkKarma"] = @(info.linkKarma);
     dict[@"commentKarma"] = @(info.commentKarma);
     dict[@"createdUTC"] = @(info.createdUTC);
+    dict[@"accountStatsKnown"] = @(info.accountStatsKnown);
     if (info.followStateKnown) {
         dict[@"userIsSubscriber"] = @(info.userIsSubscriber);
         if (info.followStateAccount.length) dict[@"followStateAccount"] = info.followStateAccount;
@@ -306,6 +308,11 @@ static NSTimeInterval const ApolloUserProfileImageNotFoundTTL = 15.0 * 60.0;
     if ([dict[@"linkKarma"] respondsToSelector:@selector(integerValue)]) info.linkKarma = [dict[@"linkKarma"] integerValue];
     if ([dict[@"commentKarma"] respondsToSelector:@selector(integerValue)]) info.commentKarma = [dict[@"commentKarma"] integerValue];
     if ([dict[@"createdUTC"] respondsToSelector:@selector(doubleValue)]) info.createdUTC = [dict[@"createdUTC"] doubleValue];
+    info.accountStatsKnown = [dict[@"accountStatsKnown"] isKindOfClass:NSNumber.class]
+        && [dict[@"accountStatsKnown"] boolValue]
+        && [dict[@"linkKarma"] isKindOfClass:NSNumber.class]
+        && [dict[@"commentKarma"] isKindOfClass:NSNumber.class]
+        && [dict[@"createdUTC"] isKindOfClass:NSNumber.class];
     if ([dict[@"userIsSubscriber"] respondsToSelector:@selector(boolValue)]) {
         info.userIsSubscriber = [dict[@"userIsSubscriber"] boolValue];
         info.followStateKnown = YES;
@@ -539,6 +546,11 @@ static NSTimeInterval const ApolloUserProfileImageNotFoundTTL = 15.0 * 60.0;
     if ([linkKarma respondsToSelector:@selector(integerValue)]) info.linkKarma = [linkKarma integerValue];
     if ([commentKarma respondsToSelector:@selector(integerValue)]) info.commentKarma = [commentKarma integerValue];
     if ([createdUTC respondsToSelector:@selector(doubleValue)]) info.createdUTC = [createdUTC doubleValue];
+    info.accountStatsKnown = [linkKarma isKindOfClass:NSNumber.class]
+        && [commentKarma isKindOfClass:NSNumber.class]
+        && [createdUTC isKindOfClass:NSNumber.class]
+        && isfinite([linkKarma doubleValue]) && isfinite([commentKarma doubleValue])
+        && isfinite(info.createdUTC) && info.createdUTC > 0;
     // Follow state: `data.subreddit.user_is_subscriber` is YES when the logged-in
     // account follows this user (following == subscribing to their u_ profile).
     id userIsSubscriber = subreddit[@"user_is_subscriber"];
@@ -813,6 +825,34 @@ static NSTimeInterval ApolloUserProfileRetryBackoffForAttempt(NSInteger attempt)
     });
 }
 
+- (void)requestAccountStatsForUsername:(NSString *)username completion:(void (^)(ApolloUserProfileInfo *info))completion {
+    NSString *key = [self normalizedUsername:username];
+    if (!key) {
+        if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(nil); });
+        return;
+    }
+    dispatch_async(self.queue, ^{
+        ApolloUserProfileInfo *info = [self.infoCache objectForKey:key] ?: self.diskInfo[key];
+        NSTimeInterval age = -[info.fetchedAt timeIntervalSinceNow];
+        // Also honor recent permanent-miss sentinels and suspended profiles;
+        // neither contains enough evidence to assign a suspicion score.
+        if (info && info.fetchedAt && age >= 0 && age < 86400
+            && (info.accountStatsKnown || !info.username || info.isSuspended)) {
+            if (completion) dispatch_async(dispatch_get_main_queue(), ^{ completion(info); });
+            return;
+        }
+        NSMutableArray<void (^)(ApolloUserProfileInfo *)> *callbacks = self.infoCompletions[key];
+        if (callbacks) {
+            if (completion) [callbacks addObject:[completion copy]];
+            return;
+        }
+        callbacks = [NSMutableArray array];
+        if (completion) [callbacks addObject:[completion copy]];
+        self.infoCompletions[key] = callbacks;
+        [self startInfoFetchForKey:key bypassingCache:YES];
+    });
+}
+
 #pragma mark - Batch prefetch
 
 - (void)batchPrefetchProfilesForFullNames:(NSArray<NSString *> *)fullNames {
@@ -885,7 +925,7 @@ static NSTimeInterval ApolloUserProfileRetryBackoffForAttempt(NSInteger attempt)
                 // Never clobber a richer entry: about.json (or a prior batch) already gave
                 // this user an icon — keep it (it may carry snoovatar/banner/suspension).
                 ApolloUserProfileInfo *existing = [self.infoCache objectForKey:key] ?: self.diskInfo[key];
-                if (existing.iconURL) continue;
+                if (existing.iconURL || existing.accountStatsKnown) continue;
 
                 // Lightweight entry: account icon only. suspensionChecked stays NO so a
                 // later profile-page open still upgrades to full fidelity via about.json.

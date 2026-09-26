@@ -1,4 +1,13 @@
 #import <Foundation/Foundation.h>
+#import "ApolloBotScore.h"
+
+__BEGIN_DECLS
+// Bot heuristic settings; read/written on main, never from Texture's measure queue.
+extern BOOL sBotSuspicionEnabled;
+extern BOOL sBotSuspicionPosts;
+extern BOOL sBotSuspicionComments;
+extern ApolloBotRules sBotSuspicionRules;
+__END_DECLS
 
 @class UIScrollView;
 @class UINavigationItem;

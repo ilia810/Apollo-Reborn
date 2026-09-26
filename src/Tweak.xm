@@ -21,6 +21,7 @@
 #import "ApolloBarkNotifications.h"
 #import "ApolloLiquidGlassIconSelectionState.h"
 #import "ApolloState.h"
+#import "ApolloBotSuspicion.h"
 #import "Tweak.h"
 #import "settings/CustomAPIViewController.h"
 #import "Version.h"
@@ -3557,6 +3558,10 @@ static BOOL ApolloDefaultsKeyChangesActiveAccount(NSString *key) {
                                     UDKeyFeedGalleryCarousel: @YES,
                                     UDKeyFeedGalleryEdgeSwipeNav: @YES,
                                     UDKeySwipeUpForComments: @YES,
+                                    UDKeyGestureBlockPostSlot: @(-1),
+                                    UDKeyGestureBlockCommentSlot: @(-1),
+                                    UDKeyGestureBlockPostIncludesAuthor: @YES,
+                                    UDKeyGestureBlockConfirm: @YES,
                                     UDKeySportsClipsInlineVideo: @YES,
                                     UDKeyDevvitInteractivePosts: @NO,
                                     UDKeyDevvitFeedWidgets: @YES,
@@ -3662,6 +3667,8 @@ static BOOL ApolloDefaultsKeyChangesActiveAccount(NSString *key) {
                                     UDKeyRedditClientSecret: @""};
     NSUserDefaults *standardDefaults = [NSUserDefaults standardUserDefaults];
     [standardDefaults registerDefaults:defaultValues];
+    [standardDefaults registerDefaults:ApolloBotSuspicionDefaults()];
+    ApolloBotSuspicionLoadSettings();
     NSString *bundleID = [[NSBundle mainBundle] bundleIdentifier];
     NSDictionary *persistentDomain = bundleID.length > 0 ? [standardDefaults persistentDomainForName:bundleID] : nil;
 

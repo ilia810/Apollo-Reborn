@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Features
+
+- Add opt-in **Bot Suspicion** labels on posts and comments, with editable account-age, karma, and karma-per-day rules, scoring weights, tap-to-explain labels, and an in-app algorithm playground under Settings > Apollo Reborn > Bot Suspicion
+- Add **Gesture Blocking** in Settings > Apollo Reborn > Posts & Feeds, letting a swipe slot block instead of running its native action: on posts it filters the subreddit and blocks the author, on comments it blocks the commenter
+  - Assign the slot to any action in Apollo's own Settings > Gestures first, then claim it here; unclaimed slots and unconfigured installs behave exactly as before
+  - Confirms before blocking by default, and Also Block Author can be turned off to filter the subreddit alone
+
 ## [v3.6.0] - 2026-08-18
 
 ### Features

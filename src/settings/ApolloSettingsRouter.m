@@ -8,6 +8,8 @@
 #import "TagFiltersViewController.h"
 #import "settings/ApolloAISettingsViewController.h"
 #import "settings/ApolloDeletedCommentsSettingsViewController.h"
+#import "settings/ApolloGestureBlockingViewController.h"
+#import "settings/ApolloBotSuspicionViewController.h"
 #import "settings/ApolloLinkPreviewSettingsViewController.h"
 #import "settings/ApolloOpenInAppViewController.h"
 #import "settings/ApolloLinkCompanionViewController.h"
@@ -61,7 +63,9 @@ static void ApolloSettingsRouterEnsureRegistry(void) {
         add(@"accounts-api-keys", @"Accounts & API Keys", @"Apollo Reborn → Setup", ApolloSettingsInsetGrouped([ApolloAccountsAPIKeysViewController class]));
         add(@"posts-feeds", @"Posts & Feeds", @"Apollo Reborn → Features", ApolloSettingsInsetGrouped([ApolloPostsFeedsViewController class]));
         add(@"info-row", @"Info Row", @"Apollo Reborn → Features → Posts & Feeds", ApolloSettingsInsetGrouped([InfoRowSettingsViewController class]));
+        add(@"gesture-blocking", @"Gesture Blocking", @"Apollo Reborn → Features → Posts & Feeds", ApolloSettingsInsetGrouped([ApolloGestureBlockingViewController class]));
         add(@"comments", @"Comments", @"Apollo Reborn → Features", ApolloSettingsInsetGrouped([ApolloCommentsSettingsViewController class]));
+        add(@"bot-suspicion", @"Bot Suspicion", @"Apollo Reborn → Features", ApolloSettingsInsetGrouped([ApolloBotSuspicionViewController class]));
         add(@"media", @"Media", @"Apollo Reborn → Features", ApolloSettingsInsetGrouped([ApolloMediaSettingsViewController class]));
         add(@"subreddits", @"Subreddits", @"Apollo Reborn → Features", ApolloSettingsInsetGrouped([ApolloSubredditsSettingsViewController class]));
         add(@"subreddit-layout", @"Subreddit Layout", @"Apollo Reborn → Features → Subreddits", ApolloSettingsInsetGrouped([ApolloSubredditLayoutViewController class]));

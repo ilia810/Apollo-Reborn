@@ -20,7 +20,10 @@
 #import "ApolloUserProfileCache.h"
 #import "ApolloLinkPreviewCache.h"
 #import "ApolloLinkPreviewShapeMemory.h"
+#import "ApolloGestureBlockActions.h"
 #import "settings/ApolloDeletedCommentsSettingsViewController.h"
+#import "settings/ApolloGestureBlockingViewController.h"
+#import "settings/ApolloBotSuspicionViewController.h"
 #import "settings/ApolloLinkPreviewSettingsViewController.h"
 #import "settings/ApolloProfileLayoutViewController.h"
 #import "ApolloSubredditCustomBannerCache.h"
@@ -772,6 +775,19 @@ typedef NS_ENUM(NSInteger, Tag) {
     ApolloSettingsRow *linkPreviews = [self buildLinkPreviewsRow];
     ApolloSettingsRow *polls = [self buildPollsRow];
     ApolloSettingsRow *apolloAI = [self buildApolloAIRow];
+    ApolloSettingsRow *botSuspicion = [self hubDisclosureRowWithID:@"feat.botSuspicion" title:@"Bot Suspicion"
+        subtitle:^NSString * {
+            if (!sBotSuspicionEnabled) return @"Off · adjustable author rules";
+            if (sBotSuspicionPosts && sBotSuspicionComments) return @"Posts & Comments";
+            if (sBotSuspicionPosts) return @"Posts";
+            if (sBotSuspicionComments) return @"Comments";
+            return @"No surfaces selected";
+        }
+        push:^UIViewController * {
+            return [[ApolloBotSuspicionViewController alloc] initWithStyle:UITableViewStyleInsetGrouped];
+        }];
+    botSuspicion.iconSystemName = @"person.crop.circle.badge.questionmark";
+    botSuspicion.iconTileColor = UIColor.systemOrangeColor;
 
     posts.iconSystemName        = @"newspaper.fill";              posts.iconTileColor        = [UIColor systemOrangeColor];
     comments.iconSystemName     = @"text.bubble.fill";            comments.iconTileColor     = [UIColor systemGreenColor];
@@ -786,7 +802,7 @@ typedef NS_ENUM(NSInteger, Tag) {
     return [ApolloSettingsSection sectionWithTitle:@"Features"
                                             footer:@"Fine-tune posts, comments, media, subreddits, profiles and the interface."
                                               rows:@[ posts, comments, media, subreddits, profiles, interface_,
-                                                      linkPreviews, polls, apolloAI ]];
+                                                      linkPreviews, polls, apolloAI, botSuspicion ]];
 }
 
 - (ApolloSettingsSection *)buildAdvancedSection {
@@ -1415,9 +1431,26 @@ typedef NS_ENUM(NSInteger, Tag) {
                                   onToggle:^(UISwitch *sender) { [weakSelf devvitFeedPostsSwitchToggled:sender]; }];
     devvitFeedPosts.visible = ^BOOL { return [[NSUserDefaults standardUserDefaults] boolForKey:UDKeyDevvitInteractivePosts]; };
 
+    ApolloSettingsRow *gestureBlocking =
+        [ApolloSettingsRow disclosureRowWithID:@"gen.gestureBlocking"
+                                         title:@"Gesture Blocking"
+                                        detail:^NSString * {
+            BOOL posts = ApolloGestureBlockPostSlot() != ApolloGestureSlotNone;
+            BOOL comments = ApolloGestureBlockCommentSlot() != ApolloGestureSlotNone;
+            if (posts && comments) return @"Posts & Comments";
+            if (posts) return @"Posts";
+            if (comments) return @"Comments";
+            return @"Off";
+        }
+                                          push:^UIViewController * {
+            return [[ApolloGestureBlockingViewController alloc] initWithStyle:UITableViewStyleInsetGrouped];
+        }];
+    gestureBlocking.iconSystemName = @"hand.raised.slash";
+    gestureBlocking.iconTileColor = [UIColor systemRedColor];
+
     return [ApolloSettingsSection sectionWithTitle:@"Feed"
                                             footer:@"Small tweaks for the post list. Feed Video Scrubber: drag the progress bar at the bottom of a video — in the feed or on the post itself — to scrub it without opening the video. Live Interactive Posts shows Reddit's Developer Platform posts as their real live widget — match scores and threads, market tickers and trading dashboards, predictions, brackets, polls, and community games — instead of the placeholder text old Reddit gets. Always shown in comments; Show in Feed also puts it on large-mode feed cards, and keeps a pinned one (a subreddit's daily discussion thread, say) in the feed rather than folding it into Community Highlights, where a static card can't show live data."
-                                              rows:@[ textPostThumbnails, infoRow, feedScrubber, blockAnnouncements, devvitPosts, devvitFeedPosts ]];
+                                              rows:@[ textPostThumbnails, infoRow, gestureBlocking, feedScrubber, blockAnnouncements, devvitPosts, devvitFeedPosts ]];
 }
 
 // Interface group screen (ApolloInterfaceSettingsViewController) — the
