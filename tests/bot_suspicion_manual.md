@@ -29,6 +29,9 @@ Simulator/device checks still required before shipping:
    other weights to 0 and threshold to 60. Check compact and large posts,
    self/media posts, the comments header, nested and collapsed comments,
    search/profile comment listings, long names and Dynamic Type.
+   On posts the filled, bold banner must appear ABOVE the title/media, not
+   inside the metadata row. Check contrasting text in light/dark and custom
+   themes. Filtered/hidden posts must stay collapsed, with no stray banner.
 4. Tap labels: check score breakdown and Adjust Rules navigation, including
    on iPad and presented comment panes. Native author taps, votes, swipes,
    collapse, translation, avatars and deleted-comment treatment still work.
@@ -51,3 +54,21 @@ Simulator/device checks still required before shipping:
 
 The Windows-only check covers the real scoring engine. Logos preprocessing
 does not substitute for an iOS compile, runtime check or visual verification.
+
+## Filter Subreddit post button
+
+- In compact feeds, large feeds and opened posts, check that the old downvote
+  control shows a filter symbol and VoiceOver announces “Filter Subreddit”.
+- Tap it in All Posts/Popular: verify the subreddit appears in native
+  Settings → Filters & Blocks, its posts disappear after refresh, and its
+  vote state/score stay unchanged. The filter has native scope: opening the
+  subreddit directly still shows its posts. Remove it from Filters & Blocks.
+- Check an already-filtered subreddit, fast repeated taps, an archived post,
+  signed-out state, network failure and switching accounts during the request.
+  A failed request must not modify the filter list; a completed request must
+  update only the account that initiated it. Relaunch to verify persistence.
+- With 98 or more server filters, verify new entries use Apollo's local filter
+  list and can still be removed from the native settings screen.
+- Switch themes and upvote an already-downvoted post: the filter symbol must
+  stay a filter. Check comment downvotes, post upvotes, menu voting, configured
+  swipes, rotation and reuse after fast scrolling still work independently.

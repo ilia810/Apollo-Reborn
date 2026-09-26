@@ -75,6 +75,7 @@ ApolloReborn_FILES = \
     $(SRC_DIR)/ApolloBotScore.c \
     $(SRC_DIR)/ApolloBotSuspicion.m \
     $(SRC_DIR)/ApolloBotSuspicionUI.xm \
+    $(SRC_DIR)/ApolloPostFilterButton.xm \
     $(SRC_DIR)/settings/ApolloBotSuspicionViewController.m \
     $(SRC_DIR)/ApolloSubredditInfoCache.m \
     $(SRC_DIR)/ApolloSubredditCustomBannerCache.m \

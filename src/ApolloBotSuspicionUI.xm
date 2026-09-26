@@ -9,15 +9,21 @@
 #import <objc/message.h>
 #import <objc/runtime.h>
 
-// Native model ivars and layout ABI are documented by the class-dump headers
-// for PostInfoNode / CommentCellNode. PostInfoNode is shared by compact/large
-// feed posts and the comments header, including posts with hidden author text.
-@interface _TtC6Apollo12PostInfoNode : ASDisplayNode
+// Own the banner on the whole post cell, not PostInfoNode: that metadata row
+// can appear BELOW the title/media, especially in large post layouts.
+@interface _TtC6Apollo17LargePostCellNode : ASDisplayNode
+@end
+@interface _TtC6Apollo19CompactPostCellNode : ASDisplayNode
+@end
+@interface _TtC6Apollo22CommentsHeaderCellNode : ASDisplayNode
 @end
 @interface _TtC6Apollo15CommentCellNode : ASDisplayNode
 @end
 @interface ASDisplayNode (ApolloBotRuntime)
 @property(nonatomic, getter=isHidden) BOOL hidden;
+@end
+@interface ASTextNode (ApolloBotTextInsets)
+@property(nonatomic) UIEdgeInsets textContainerInset;
 @end
 
 @interface ApolloBotBadgeBinding : NSObject
@@ -113,6 +119,9 @@ static void ApolloBotInvalidate(ASDisplayNode *owner) {
         if (!badge) return;
         badge.maximumNumberOfLines = 0;
         badge.userInteractionEnabled = YES;
+        badge.textContainerInset = UIEdgeInsetsMake(10, 12, 10, 12);
+        badge.cornerRadius = 9;
+        badge.clipsToBounds = YES;
         ApolloMarkTweakUITextNode(badge); // never translate this as post/comment content
         __weak typeof(self) weakSelf = self;
         [badge onDidLoad:^(__kindof ASDisplayNode *node) {
@@ -128,12 +137,16 @@ static void ApolloBotInvalidate(ASDisplayNode *owner) {
     if (badge.supernode != owner) [owner addSubnode:badge];
     UIColor *accent = ApolloThemeAccentColor() ?: owner.view.tintColor ?: UIColor.systemBlueColor;
     accent = [accent resolvedColorWithTraitCollection:owner.view.traitCollection];
-    NSString *label = [NSString stringWithFormat:@"Possible bot · %d/100 points ⓘ", score.points];
+    UIColor *foreground = ApolloColorIsLight(accent) ? UIColor.blackColor : UIColor.whiteColor;
+    NSString *label = [NSString stringWithFormat:@"⚠ Possible bot · %d/100 points ⓘ", score.points];
+    UIFont *baseFont = [UIFont preferredFontForTextStyle:UIFontTextStyleSubheadline];
+    UIFontDescriptor *boldDescriptor = [baseFont.fontDescriptor fontDescriptorWithSymbolicTraits:UIFontDescriptorTraitBold];
     NSAttributedString *text = [[NSAttributedString alloc] initWithString:label attributes:@{
-        NSFontAttributeName: [UIFont preferredFontForTextStyle:UIFontTextStyleCaption1],
-        NSForegroundColorAttributeName: accent,
+        NSFontAttributeName: boldDescriptor ? [UIFont fontWithDescriptor:boldDescriptor size:0] : baseFont,
+        NSForegroundColorAttributeName: foreground,
     }];
     BOOL changed = !self.layoutBadge || ![badge.attributedText isEqualToAttributedString:text];
+    badge.backgroundColor = accent;
     if (changed) badge.attributedText = text;
     badge.hidden = NO;
     if (badge.isNodeLoaded) badge.view.accessibilityLabel = label;
@@ -248,29 +261,49 @@ static id ApolloBotWrapLayout(ASDisplayNode *owner, id nativeSpec, BOOL comment)
     Class stackClass = objc_getClass("ASStackLayoutSpec");
     Class insetClass = objc_getClass("ASInsetLayoutSpec");
     if (!nativeSpec || !badge || !stackClass || !insetClass) return nativeSpec;
+    // PostFilters and CommunityHighlights return an empty stack to hide a
+    // row. Never bring that row back just because its author has a badge.
+    if ([nativeSpec isKindOfClass:stackClass] && [(ASLayoutSpec *)nativeSpec children].count == 0) return nativeSpec;
     // Layout is pure composition: no network, UIKit views, model mutations or
     // invalidation here. Let Texture measure long labels/Dynamic Type normally.
     id caption = [insetClass insetLayoutSpecWithInsets:
-        (comment ? UIEdgeInsetsMake(0, 16, 6, 12) : UIEdgeInsetsMake(0, 0, 2, 0)) child:badge];
+        (comment ? UIEdgeInsetsMake(4, 16, 6, 12) : UIEdgeInsetsMake(10, 12, 0, 12)) child:badge];
     // Verified Texture enum values: vertical 0, justify start 0, stretch 3.
-    return [stackClass stackLayoutSpecWithDirection:0 spacing:4 justifyContent:0 alignItems:3
-        children:@[nativeSpec, caption]];
+    return [stackClass stackLayoutSpecWithDirection:0 spacing:6 justifyContent:0 alignItems:3
+        children:@[caption, nativeSpec]];
 }
 
-%hook _TtC6Apollo12PostInfoNode
-- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
-    // PostInfoNode has its own native hit tester for its known metadata
-    // buttons. Route only our caption explicitly, preserving all other hits.
-    ApolloBotBadgeBinding *binding = objc_getAssociatedObject(self, ApolloBotBindingKey);
-    ASTextNode *badge = binding.layoutBadge;
-    if (badge && badge.isNodeLoaded && !badge.hidden) {
-        UIView *view = badge.view;
-        CGPoint local = [view convertPoint:point fromView:((ASDisplayNode *)self).view];
-        UIView *hit = [view hitTest:local withEvent:event];
-        if (hit) return hit;
-    }
-    return %orig;
+%hook _TtC6Apollo17LargePostCellNode
+- (void)didEnterDisplayState {
+    %orig;
+    ApolloBotSetVisible((ASDisplayNode *)self, NO, YES);
 }
+- (void)didExitDisplayState {
+    %orig;
+    ApolloBotSetVisible((ASDisplayNode *)self, NO, NO);
+}
+- (id)layoutSpecThatFits:(struct ApolloTextureSizeRange)size {
+    id spec = %orig;
+    return ApolloBotWrapLayout((ASDisplayNode *)self, spec, NO);
+}
+%end
+
+%hook _TtC6Apollo19CompactPostCellNode
+- (void)didEnterDisplayState {
+    %orig;
+    ApolloBotSetVisible((ASDisplayNode *)self, NO, YES);
+}
+- (void)didExitDisplayState {
+    %orig;
+    ApolloBotSetVisible((ASDisplayNode *)self, NO, NO);
+}
+- (id)layoutSpecThatFits:(struct ApolloTextureSizeRange)size {
+    id spec = %orig;
+    return ApolloBotWrapLayout((ASDisplayNode *)self, spec, NO);
+}
+%end
+
+%hook _TtC6Apollo22CommentsHeaderCellNode
 - (void)didEnterDisplayState {
     %orig;
     ApolloBotSetVisible((ASDisplayNode *)self, NO, YES);
