@@ -100,9 +100,14 @@ static void ApolloFilterPostSubreddit(ASDisplayNode *owner) {
         return;
     }
     [pending addObject:name];
+    __weak RDKClient *weakClient = client;
     [client addSubredditToFilteredSubredditsWithName:name completion:^(NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [pending removeObject:name];
+            RDKClient *completedClient = weakClient;
+            // Signing out can release the initiating account while its request
+            // finishes. Never apply that completion to a newly selected one.
+            if (!completedClient) return;
             if (error) {
                 // No account names, post text, URLs or credentials in logs.
                 ApolloLog(@"[PostFilterButton] filter request failed (code %ld)", (long)error.code);
@@ -110,7 +115,7 @@ static void ApolloFilterPostSubreddit(ASDisplayNode *owner) {
                     ApolloToastStyleError, nil);
                 return;
             }
-            ApolloFilterFinished(client, name, NO);
+            ApolloFilterFinished(completedClient, name, NO);
         });
     }];
 }
